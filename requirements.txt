@@ -1,0 +1,3 @@
+blessed==1.25.0
+wcwidth==0.2.14
+windows-curses; platform_system == "Windows"
