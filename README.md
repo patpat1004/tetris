@@ -1,6 +1,6 @@
 # Tetris
 
-## Tetris in the terminal made in python
+Tetris in the terminal made in python
 
 ## Install guide
 
