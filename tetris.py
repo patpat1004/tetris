@@ -715,6 +715,7 @@ def main(stdscr):
     render_board()
     piece.new_piece()
 
+
     term = Terminal()
     state = term.get_kitty_keyboard_state()
     pressed = {}
@@ -753,6 +754,8 @@ def main(stdscr):
                         pass
 
                 current_time = time.time() * 1000
+
+                # LEFT PRESSED
                 if key_priority(pressed, config["left"], config["right"]):
                     if pressed[config["left"]][1]:
                         piece.move(-1, 0)
@@ -764,6 +767,8 @@ def main(stdscr):
                             piece.move(-1, 0)
                             pressed[config["left"]][2] = time.time() * 1000
 
+
+                # RIGHT PRESSED
                 if key_priority(pressed, config["right"], config["left"]):
                     if pressed[config["right"]][1]:
                         piece.move(1, 0)
@@ -775,6 +780,8 @@ def main(stdscr):
                             piece.move(1, 0)
                             pressed[config["right"]][2] = time.time() * 1000
 
+                
+                # HARD DROP PRESSED
                 if config["hard_drop"] in pressed:
                     if pressed[config["hard_drop"]][1]:
                         while piece.move(0, 1):
@@ -786,18 +793,22 @@ def main(stdscr):
                     x_sdf = 1
 
 
+                # ROTATE CCW PRESSED
                 if config["rotate_ccw"] in pressed:
                     if pressed[config["rotate_ccw"]][1]:
                         piece.rotate(-1)
 
+                # ROTATE CW PRESSED
                 if config["rotate_cw"] in pressed:
                     if pressed[config["rotate_cw"]][1]:
                         piece.rotate(1)
 
+                # ROTATE 180 PRESSED
                 if config["rotate_180"] in pressed:
                     if pressed[config["rotate_180"]][1]:
                         piece.rotate(2)
 
+                # HOLD PRESSED
                 if config["hold"] in pressed:
                     if pressed[config["hold"]][1]:
                         if piece.can_hold:
