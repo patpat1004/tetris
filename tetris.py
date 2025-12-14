@@ -167,10 +167,10 @@ pieces = {
         "L": [[0, 0], [-1, 1], [0, 1], [0, -1]],
     },
     "o": {
-        "0": [[0, 0], [0, -1], [1, -1], [1, 0]],
-        "R": [[0, 0], [0, -1], [1, -1], [1, 0]],
-        "2": [[0, 0], [0, -1], [1, -1], [1, 0]],
-        "L": [[0, 0], [0, -1], [1, -1], [1, 0]],
+        "0": [[0, 0], [0, 1], [1, 1], [1, 0]],
+        "R": [[0, 0], [0, 1], [1, 1], [1, 0]],
+        "2": [[0, 0], [0, 1], [1, 1], [1, 0]],
+        "L": [[0, 0], [0, 1], [1, 1], [1, 0]],
     },
     "s": {
         "0": [[0, 0], [0, 1], [1, 1], [-1, 0]],
@@ -257,12 +257,14 @@ def render_hold():
     hold_win.addstr(0, 0, "    HOLD    ", curses.A_REVERSE)
     if piece.held:
         render_piece = piece.held
+
+        offset_x = 0
+        offset_y = 0
         if render_piece == "i" or render_piece == "o":
-            offset_y = -1
+            if render_piece == "i":
+                offset_y = -1
             offset_x = -1
-        else:
-            offset_y = 0
-            offset_x = 0
+
         for i in range(len(pieces[render_piece]["0"])):
             x_offset = pieces[render_piece]["0"][i][0]
             y_offset = pieces[render_piece]["0"][i][1]
@@ -290,12 +292,14 @@ def render_next():
     next_win.addstr(0, 0, "    NEXT    ", curses.A_REVERSE)
     for next_piece in range(5):
         render_piece = piece.bag[next_piece]
+
+        offset_x = 0
+        offset_y = 0
         if render_piece == "i" or render_piece == "o":
-            offset_y = -1
+            if render_piece == "i":
+                offset_y = -1
             offset_x = -1
-        else:
-            offset_y = 0
-            offset_x = 0
+
         for i in range(len(pieces[render_piece]["0"])):
             x_offset = pieces[render_piece]["0"][i][0]
             y_offset = pieces[render_piece]["0"][i][1]
@@ -349,9 +353,7 @@ class Piece:
                 random.shuffle(bag)
                 self.bag += bag
 
-        self.position = [round(x_size / 2) - 1, -2]
-        if self.current != "o":
-            self.position[1] = -1
+        self.position = [round(x_size / 2) - 1, -1]
         self.rotation = "0"
         self.last_grav_time = time.time() * 1000
         self.been_on_ground = False
@@ -715,7 +717,6 @@ def main(stdscr):
     render_board()
     piece.new_piece()
 
-
     term = Terminal()
     state = term.get_kitty_keyboard_state()
     pressed = {}
@@ -767,7 +768,6 @@ def main(stdscr):
                             piece.move(-1, 0)
                             pressed[config["left"]][2] = time.time() * 1000
 
-
                 # RIGHT PRESSED
                 if key_priority(pressed, config["right"], config["left"]):
                     if pressed[config["right"]][1]:
@@ -780,7 +780,6 @@ def main(stdscr):
                             piece.move(1, 0)
                             pressed[config["right"]][2] = time.time() * 1000
 
-                
                 # HARD DROP PRESSED
                 if config["hard_drop"] in pressed:
                     if pressed[config["hard_drop"]][1]:
@@ -791,7 +790,6 @@ def main(stdscr):
                     x_sdf = config["sdf"]
                 else:
                     x_sdf = 1
-
 
                 # ROTATE CCW PRESSED
                 if config["rotate_ccw"] in pressed:
