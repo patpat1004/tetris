@@ -561,6 +561,10 @@ class Piece:
 
     def gravity(self, x_sdf):
         current_time = time.time() * 1000
+        if x_sdf == 0:
+            while self.move(0, 1):
+                self.score += 1
+            return
         if current_time - self.last_grav_time > levelspeed[self.level] / x_sdf:
             if x_sdf > 1:
                 self.score += 1
