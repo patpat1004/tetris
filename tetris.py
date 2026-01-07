@@ -11,18 +11,21 @@ from blessed import Terminal
 from curses import wrapper
 
 
+
 def frames_to_ms(frames):
     return (frames * 1000) / 60
 
 
 # default settings
-defaults = {
+handlings_default = {
     "das": 10,
     "arr": 2,
     "sdf": 6,
     "level": 6,
     "width": 10,
     "height": 20,
+}
+keybinds_default = {
     "left": "a",
     "right": "d",
     "rotate_ccw": "j",
@@ -33,12 +36,14 @@ defaults = {
     "hold": " ",
 }
 
+path = __file__.replace(os.path.basename(__file__),"")
+
 for attempt in range(0, 2):
     try:
-        with open("settings.json", "r") as file:
-            settings = json.load(file)
+        with open(f"{path}handling.json", "r") as file:
+            handling = json.load(file)
     except FileNotFoundError:
-        with open("settings.json", "w") as file:
+        with open(f"{path}handling.json", "w") as file:
             file.write("""{
     "das": 10,
     "arr": 2,
@@ -47,22 +52,30 @@ for attempt in range(0, 2):
     "level": 6,
 
     "width": 10,
-    "height": 20,
+    "height": 20
+}""")
 
-
+for attempt in range(0, 2):
+    try:
+        with open(f"{path}key_binds.json", "r") as file:
+            keybinds = json.load(file)
+    except FileNotFoundError:
+        with open(f"{path}key_binds.json", "w") as file:
+            file.write("""{
     "left": "a",
     "right": "d",
-
     "rotate_ccw": "j",
     "rotate_cw": "k",
     "rotate_180": "l",
-
     "hard_drop": "w",
     "soft_drop": "s",
     "hold": " "
 }""")
 
-config = {**defaults, **settings}
+
+handling = {**handlings_default, **handling}
+keybinds = {**keybinds_default, **keybinds}
+config = {**handling, **keybinds}
 config["das"] = frames_to_ms(config["das"])
 config["arr"] = frames_to_ms(config["arr"])
 
@@ -739,80 +752,99 @@ def main(stdscr):
                     )
                 except:
                     identifier = key.value or str(key) or None
+                try:
+                    if "KEY_" in key.name:
+                        identifier = key.name.replace("KEY_", "").replace("_RELEASED", "").lower()
+                except:
+                    pass
 
+                if identifier == "q":
+                    exit(0)
+                    break
+
+                kb = next((k for k, v in config.items() if (v == identifier) or (isinstance(v, list) and identifier in v)), None)
                 if key.pressed:
-                    if identifier:
-                        if identifier not in pressed:
-                            pressed[identifier] = [
+                    if kb:
+                        if kb not in pressed:
+                            pressed[kb] = [
                                 time.time() * 1000,
                                 True,
                                 time.time() * 1000,
                             ]  # [initial_press_time, is_initial_press, last_arr_move]
-                            if identifier == "q":
-                                exit(0)
-                                break
 
                 elif key.released:
                     try:
-                        del pressed[identifier]
+                        del pressed[kb]
                     except KeyError:
                         pass
 
                 current_time = time.time() * 1000
 
                 # LEFT PRESSED
-                if key_priority(pressed, config["left"], config["right"]):
-                    if pressed[config["left"]][1]:
-                        piece.move(-1, 0)
-                    if (
-                        not pressed[config["left"]][1]
-                        and current_time - pressed[config["left"]][0] > config["das"]
-                    ):
-                        if current_time - pressed[config["left"]][2] > config["arr"]:
+                if "left" in pressed:
+                    k = "left"
+                    if key_priority(pressed, k, "right"):
+                        if pressed[k][1]:
                             piece.move(-1, 0)
-                            pressed[config["left"]][2] = time.time() * 1000
+                        if (
+                            not pressed[k][1]
+                            and current_time - pressed[k][0] > config["das"]
+                        ):
+                            if current_time - pressed[k][2] > config["arr"]:
+                                piece.move(-1, 0)
+                                pressed[k][2] = time.time() * 1000
+
 
                 # RIGHT PRESSED
-                if key_priority(pressed, config["right"], config["left"]):
-                    if pressed[config["right"]][1]:
-                        piece.move(1, 0)
-                    if (
-                        not pressed[config["right"]][1]
-                        and current_time - pressed[config["right"]][0] > config["das"]
-                    ):
-                        if current_time - pressed[config["right"]][2] > config["arr"]:
+                if "right" in pressed:
+                    k = "right"
+                    if key_priority(pressed, k, "left"):
+                        if pressed[k][1]:
                             piece.move(1, 0)
-                            pressed[config["right"]][2] = time.time() * 1000
+                        if (
+                            not pressed[k][1]
+                            and current_time - pressed[k][0] > config["das"]
+                        ):
+                            if current_time - pressed[k][2] > config["arr"]:
+                                piece.move(1, 0)
+                                pressed[k][2] = time.time() * 1000
 
                 # HARD DROP PRESSED
-                if config["hard_drop"] in pressed:
-                    if pressed[config["hard_drop"]][1]:
+                if "hard_drop" in pressed:
+                    k = "hard_drop"
+                    if pressed[k][1]:
                         while piece.move(0, 1):
                             piece.score += 2
                         piece.lock()
-                if config["soft_drop"] in pressed:
+
+                # SOFT DROP PRESSED
+                if "soft_drop" in pressed:
                     x_sdf = config["sdf"]
                 else:
                     x_sdf = 1
 
                 # ROTATE CCW PRESSED
-                if config["rotate_ccw"] in pressed:
-                    if pressed[config["rotate_ccw"]][1]:
+                if "rotate_ccw" in pressed:
+                    k = "rotate_ccw"
+                    if pressed[k][1]:
                         piece.rotate(-1)
 
                 # ROTATE CW PRESSED
-                if config["rotate_cw"] in pressed:
-                    if pressed[config["rotate_cw"]][1]:
+                if "rotate_cw" in pressed:
+                    k = "rotate_cw"
+                    if pressed[k][1]:
                         piece.rotate(1)
 
                 # ROTATE 180 PRESSED
-                if config["rotate_180"] in pressed:
-                    if pressed[config["rotate_180"]][1]:
+                if "rotate_180" in pressed:
+                    k = "rotate_180"
+                    if pressed[k][1]:
                         piece.rotate(2)
 
                 # HOLD PRESSED
-                if config["hold"] in pressed:
-                    if pressed[config["hold"]][1]:
+                if "hold" in pressed:
+                    k = "hold"
+                    if pressed[k][1]:
                         if piece.can_hold:
                             piece.new_piece(hold=True)
 
@@ -830,13 +862,13 @@ def main(stdscr):
 
                 if state is None:
                     try:
-                        del pressed[identifier]
+                        del pressed[kb]
                     except KeyError:
                         pass
                 else:
                     if key.pressed:
-                        if identifier:
-                            pressed[identifier][1] = False
+                        if kb:
+                            pressed[kb][1] = False
 
                 new_height, new_width = stdscr.getmaxyx()
                 if height != new_height or width != new_width:
