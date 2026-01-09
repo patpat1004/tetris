@@ -11,7 +11,6 @@ from blessed import Terminal
 from curses import wrapper
 
 
-
 def frames_to_ms(frames):
     return (frames * 1000) / 60
 
@@ -21,7 +20,7 @@ handlings_default = {
     "das": 10,
     "arr": 2,
     "sdf": 6,
-    "level": 6,
+    "starting_level": 0,
     "width": 10,
     "height": 20,
 }
@@ -36,7 +35,7 @@ keybinds_default = {
     "hold": " ",
 }
 
-path = __file__.replace(os.path.basename(__file__),"")
+path = __file__.replace(os.path.basename(__file__), "")
 
 for attempt in range(0, 2):
     try:
@@ -49,7 +48,7 @@ for attempt in range(0, 2):
     "arr": 2,
     "sdf": 6,
     
-    "level": 6,
+    "starting_level": 0,
 
     "width": 10,
     "height": 20
@@ -338,13 +337,14 @@ def key_priority(dict, a, b):
 
 class Piece:
     def __init__(self):
-        self.level = config["level"]
+        self.lines = 0
+        self.level = min(
+            config["starting_level"] + int(self.lines / 10), len(levelspeed) - 1
+        )
         self.last_grav_time = time.time() * 1000
-        bag1 = list(pieces.keys())
-        random.shuffle(bag1)
-        bag2 = list(pieces.keys())
-        random.shuffle(bag2)
-        self.bag = bag1 + bag2
+        bag = list(pieces.keys())
+        random.shuffle(bag)
+        self.bag = bag
         self.held = None
         self.score = 0
         self.can_hold = True
@@ -572,14 +572,16 @@ class Piece:
                 return True
         return False
 
-    def gravity(self, x_sdf):
+    def gravity(self, sdf):
         current_time = time.time() * 1000
-        if x_sdf == 0:
+        if sdf <= 0:
             while self.move(0, 1):
                 self.score += 1
             return
-        if current_time - self.last_grav_time > levelspeed[self.level] / x_sdf:
-            if x_sdf > 1:
+        if sdf < 5:
+            sdf = 1
+        if current_time - self.last_grav_time > levelspeed[self.level] / sdf:
+            if sdf > 1:
                 self.score += 1
             self.move(0, 1)
             self.last_grav_time = time.time() * 1000
@@ -598,6 +600,7 @@ class Piece:
                 board.pop(y)
                 board.insert(0, ["0"] * x_size)
                 rows_cleared += 1
+                self.lines += 1
 
         if rows_cleared == 1:
             self.score += 100 * self.level
@@ -607,6 +610,10 @@ class Piece:
             self.score += 500 * self.level
         elif rows_cleared == 4:
             self.score += 800 * self.level
+
+        self.level = min(
+            config["starting_level"] + int(self.lines / 10), len(levelspeed) - 1
+        )
 
         render_board()
         self.new_piece()
@@ -754,7 +761,11 @@ def main(stdscr):
                     identifier = key.value or str(key) or None
                 try:
                     if "KEY_" in key.name:
-                        identifier = key.name.replace("KEY_", "").replace("_RELEASED", "").lower()
+                        identifier = (
+                            key.name.replace("KEY_", "")
+                            .replace("_RELEASED", "")
+                            .lower()
+                        )
                 except:
                     pass
 
@@ -762,7 +773,15 @@ def main(stdscr):
                     exit(0)
                     break
 
-                kb = next((k for k, v in config.items() if (v == identifier) or (isinstance(v, list) and identifier in v)), None)
+                kb = next(
+                    (
+                        k
+                        for k, v in config.items()
+                        if (v == identifier)
+                        or (isinstance(v, list) and identifier in v)
+                    ),
+                    None,
+                )
                 if key.pressed:
                     if kb:
                         if kb not in pressed:
@@ -794,7 +813,6 @@ def main(stdscr):
                                 piece.move(-1, 0)
                                 pressed[k][2] = time.time() * 1000
 
-
                 # RIGHT PRESSED
                 if "right" in pressed:
                     k = "right"
@@ -819,9 +837,9 @@ def main(stdscr):
 
                 # SOFT DROP PRESSED
                 if "soft_drop" in pressed:
-                    x_sdf = config["sdf"]
+                    sdf = config["sdf"]
                 else:
-                    x_sdf = 1
+                    sdf = 1
 
                 # ROTATE CCW PRESSED
                 if "rotate_ccw" in pressed:
@@ -848,7 +866,7 @@ def main(stdscr):
                         if piece.can_hold:
                             piece.new_piece(hold=True)
 
-                piece.gravity(x_sdf)
+                piece.gravity(sdf)
                 if not piece.been_on_ground:
                     if piece.on_ground():
                         piece.been_on_ground = True
