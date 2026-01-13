@@ -919,13 +919,11 @@ def main(stdscr):
                             hold_win.border()
                             hold_win.refresh()
 
-                            # Clear and redraw content in each window
                             game_board.clear()
                             game_board.border()
-                            # Redraw your game board content...
+
                             next_win.clear()
                             next_win.border()
-                            next_win.refresh()
 
                             render_board()
                             render_hold()
