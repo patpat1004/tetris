@@ -24,17 +24,16 @@ handlings_default = {
     "width": 10,
     "height": 20,
 }
-keybinds_default = {
-    "left": "a",
-    "right": "d",
-    "rotate_ccw": "j",
-    "rotate_cw": "k",
-    "rotate_180": "l",
-    "hard_drop": "w",
-    "soft_drop": "s",
-    "hold": " ",
+controls_default = {
+    "left": ["left", "4"],
+    "right": ["right", "6"],
+    "soft_drop": ["down", "2"],
+    "hard_drop": [" ", "8"],
+    "rotate_ccw": ["z", "3", "7"],
+    "rotate_cw": ["up", "x", "1", "5", "9"],
+    "rotate_180": ["a"],
+    "hold": ["c", "0"],
 }
-
 path = __file__.replace(os.path.basename(__file__), "")
 
 for attempt in range(0, 2):
@@ -44,37 +43,41 @@ for attempt in range(0, 2):
     except FileNotFoundError:
         with open(f"{path}handling.json", "w") as file:
             file.write("""{
-    "das": 10,
-    "arr": 2,
-    "sdf": 6,
-    
-    "starting_level": 0,
+  "das":            10,
+  "arr":            2,
+  "sdf":            6,
 
-    "width": 10,
-    "height": 20
+  "starting_level": 0,
+
+  "width":          10,
+  "height":         20
 }""")
 
 for attempt in range(0, 2):
     try:
-        with open(f"{path}key_binds.json", "r") as file:
-            keybinds = json.load(file)
+        with open(f"{path}controls.json", "r") as file:
+            controls = json.load(file)
     except FileNotFoundError:
-        with open(f"{path}key_binds.json", "w") as file:
-            file.write("""{
-    "left": "a",
-    "right": "d",
-    "rotate_ccw": "j",
-    "rotate_cw": "k",
-    "rotate_180": "l",
-    "hard_drop": "w",
-    "soft_drop": "s",
-    "hold": " "
-}""")
+        with open(f"{path}controls.json", "w") as file:
+            file.write("""
+{
+  "left":       ["left", "4"],
+  "right":      ["right", "6"],
+  "soft_drop":  ["down", "2"],
+  "hard_drop":  [" ", "8"],
+
+  "rotate_ccw": ["z", "3", "7"],
+  "rotate_cw":  ["up", "x", "1", "5", "9"],
+  "rotate_180": ["a"],
+
+  "hold":       ["c", "0"]
+}
+""")
 
 
 handling = {**handlings_default, **handling}
-keybinds = {**keybinds_default, **keybinds}
-config = {**handling, **keybinds}
+controls = {**controls_default, **controls}
+config = {**handling, **controls}
 config["das"] = frames_to_ms(config["das"])
 config["arr"] = frames_to_ms(config["arr"])
 
@@ -763,6 +766,7 @@ def main(stdscr):
                     if "KEY_" in key.name:
                         identifier = (
                             key.name.replace("KEY_", "")
+                            .replace("KP_", "")
                             .replace("_RELEASED", "")
                             .lower()
                         )
