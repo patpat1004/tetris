@@ -59,8 +59,7 @@ for attempt in range(0, 2):
             controls = json.load(file)
     except FileNotFoundError:
         with open(f"{path}controls.json", "w") as file:
-            file.write("""
-{
+            file.write("""{
   "left":       ["left", "4"],
   "right":      ["right", "6"],
   "soft_drop":  ["down", "2"],
