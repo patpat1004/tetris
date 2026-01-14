@@ -266,7 +266,7 @@ def render_board():
 
 
 def render_hold():
-    hold_win.clear()
+    hold_win.erase()
     hold_win.border()
     hold_win.addstr(0, 0, "    HOLD    ", curses.A_REVERSE)
     if piece.held:
@@ -301,7 +301,7 @@ def render_hold():
 
 
 def render_next():
-    next_win.clear()
+    next_win.erase()
     next_win.border()
     next_win.addstr(0, 0, "    NEXT    ", curses.A_REVERSE)
     for next_piece in range(5):
