@@ -327,6 +327,13 @@ def render_next():
     next_win.refresh()
 
 
+def render_points():
+    points_win.erase()
+    points_win.addstr(0, 0, "SCORE")
+    points_win.addstr(1, 0, str(piece.score))
+    points_win.refresh()
+
+
 def key_priority(dict, a, b):
     if a not in dict:
         return False
@@ -374,6 +381,9 @@ class Piece:
         self.been_on_ground = False
         self.lock_timer = 0
         self.lock_interrupt = 0
+
+        if not hold:
+            self.can_hold = True
 
         render_hold()
         render_next()
@@ -579,13 +589,16 @@ class Piece:
         if sdf <= 0:
             while self.move(0, 1):
                 self.score += 1
+            render_points()
             return
         if sdf < 5:
             sdf = 1
         if current_time - self.last_grav_time > levelspeed[self.level] / sdf:
-            if sdf > 1:
-                self.score += 1
-            self.move(0, 1)
+            if not self.on_ground():
+                if sdf > 1:
+                    self.score += 1
+                    render_points()
+                self.move(0, 1)
             self.last_grav_time = time.time() * 1000
 
     def lock(self):
@@ -605,22 +618,22 @@ class Piece:
                 self.lines += 1
 
         if rows_cleared == 1:
-            self.score += 100 * self.level
+            self.score += 100 * (self.level + 1)
         elif rows_cleared == 2:
-            self.score += 300 * self.level
+            self.score += 300 * (self.level + 1)
         elif rows_cleared == 3:
-            self.score += 500 * self.level
+            self.score += 500 * (self.level + 1)
         elif rows_cleared == 4:
-            self.score += 800 * self.level
+            self.score += 800 * (self.level + 1)
 
         self.level = min(
             config["starting_level"] + int(self.lines / 10), len(levelspeed) - 1
         )
 
-        render_board()
+        if rows_cleared > 0:
+            render_board()
+            render_points()
         self.new_piece()
-        self.can_hold = True
-        render_hold()
 
 
 def main(stdscr):
@@ -628,63 +641,40 @@ def main(stdscr):
     global game_board
     global hold_win
     global next_win
+    global points_win
     global board
     curses.curs_set(0)
     curses.start_color()
     curses.use_default_colors()
 
     # mocha colors
-    curses.init_color(
-        16, 49 * 1000 // 255, 50 * 1000 // 255, 68 * 1000 // 255
-    )  # 313244
-    curses.init_color(
-        17, 243 * 1000 // 255, 139 * 1000 // 255, 168 * 1000 // 255
-    )  # f38ba8
-    curses.init_color(
-        18, 250 * 1000 // 255, 179 * 1000 // 255, 135 * 1000 // 255
-    )  # fab387
-    curses.init_color(
-        19, 249 * 1000 // 255, 226 * 1000 // 255, 175 * 1000 // 255
-    )  # f9e2af
-    curses.init_color(
-        20, 166 * 1000 // 255, 227 * 1000 // 255, 161 * 1000 // 255
-    )  # a6e3a1
-    curses.init_color(
-        21, 137 * 1000 // 255, 220 * 1000 // 255, 235 * 1000 // 255
-    )  # 89dceb
-    curses.init_color(
-        22, 137 * 1000 // 255, 180 * 1000 // 255, 250 * 1000 // 255
-    )  # 89b4fa
-    curses.init_color(
-        23, 203 * 1000 // 255, 166 * 1000 // 255, 247 * 1000 // 255
-    )  # cba6f7
+    # 313244
+    curses.init_color(16, 49 * 1000 // 255, 50 * 1000 // 255, 68 * 1000 // 255)
+    # f38ba8
+    curses.init_color(17, 243 * 1000 // 255, 139 * 1000 // 255, 168 * 1000 // 255)
+    # fab387
+    curses.init_color(18, 250 * 1000 // 255, 179 * 1000 // 255, 135 * 1000 // 255)
+    # f9e2af
+    curses.init_color(19, 249 * 1000 // 255, 226 * 1000 // 255, 175 * 1000 // 255)
+    # a6e3a1
+    curses.init_color(20, 166 * 1000 // 255, 227 * 1000 // 255, 161 * 1000 // 255)
+    # 89dceb
+    curses.init_color(21, 137 * 1000 // 255, 220 * 1000 // 255, 235 * 1000 // 255)
+    # 89b4fa
+    curses.init_color(22, 137 * 1000 // 255, 180 * 1000 // 255, 250 * 1000 // 255)
+    # cba6f7
+    curses.init_color(23, 203 * 1000 // 255, 166 * 1000 // 255, 247 * 1000 // 255)
 
     # latte colors
-    curses.init_color(
-        24, 49 * 1000 // 255, 50 * 1000 // 255, 68 * 1000 // 255
-    )  # 313244
+    curses.init_color(24, 49 * 1000 // 255, 50 * 1000 // 255, 68 * 1000 // 255)
 
-    curses.init_color(
-        25, 210 * 1000 // 255, 15 * 1000 // 255, 57 * 1000 // 255
-    )  # f38ba8
-    curses.init_color(
-        26, 254 * 1000 // 255, 100 * 1000 // 255, 11 * 1000 // 255
-    )  # fab387
-    curses.init_color(
-        27, 223 * 1000 // 255, 142 * 1000 // 255, 29 * 1000 // 255
-    )  # f9e2af
-    curses.init_color(
-        28, 64 * 1000 // 255, 160 * 1000 // 255, 43 * 1000 // 255
-    )  # a6e3a1
-    curses.init_color(
-        29, 4 * 1000 // 255, 165 * 1000 // 255, 229 * 1000 // 255
-    )  # 89dceb
-    curses.init_color(
-        30, 32 * 1000 // 255, 102 * 1000 // 255, 245 * 1000 // 255
-    )  # 89b4fa
-    curses.init_color(
-        31, 136 * 1000 // 255, 57 * 1000 // 255, 239 * 1000 // 255
-    )  # cba6f7
+    curses.init_color(25, 210 * 1000 // 255, 15 * 1000 // 255, 57 * 1000 // 255)
+    curses.init_color(26, 254 * 1000 // 255, 100 * 1000 // 255, 11 * 1000 // 255)
+    curses.init_color(27, 223 * 1000 // 255, 142 * 1000 // 255, 29 * 1000 // 255)
+    curses.init_color(28, 64 * 1000 // 255, 160 * 1000 // 255, 43 * 1000 // 255)
+    curses.init_color(29, 4 * 1000 // 255, 165 * 1000 // 255, 229 * 1000 // 255)
+    curses.init_color(30, 32 * 1000 // 255, 102 * 1000 // 255, 245 * 1000 // 255)
+    curses.init_color(31, 136 * 1000 // 255, 57 * 1000 // 255, 239 * 1000 // 255)
 
     curses.init_pair(1, 16, -1)  # #313244 as fg
     curses.init_pair(2, 25, 17)  # #f38ba8 as bg
@@ -704,43 +694,59 @@ def main(stdscr):
     curses.init_pair(14, 22, -1)
     curses.init_pair(15, 23, -1)
 
-    stdscr.clear()
-    stdscr.refresh()
-
     board = [["0" for i in range(x_size)] for i in range(y_size)]
 
-    height, width = stdscr.getmaxyx()
-    game_board = curses.newwin(
-        y_size + 2,
-        (x_size * 2) + 2,
-        (height - y_size - 2) // 2,
-        (width - (x_size * 2) - 2) // 2,
-    )
+    while True:
+        try:
+            stdscr.clear()
+            stdscr.refresh()
+            height, width = stdscr.getmaxyx()
+            game_board = curses.newwin(
+                y_size + 2,
+                (x_size * 2) + 2,
+                (height - y_size - 2) // 2,
+                (width - (x_size * 2) - 2) // 2,
+            )
+
+            hold_win = curses.newwin(
+                6,
+                12,
+                (height - y_size - 2) // 2,
+                (width - (x_size * 2) - 2) // 2 - 12,
+            )
+
+            next_win = curses.newwin(
+                18,
+                (4 * 2) + 4,
+                (height - y_size - 2) // 2,
+                (width - (x_size * 2) - 2) // 2 + (x_size * 2 + 2),
+            )
+
+            points_win = curses.newwin(
+                2,
+                12,
+                (height - y_size - 2) // 2 + 16 + 2,
+                (width - (x_size * 2) - 2) // 2 + (x_size * 2 + 2),
+            )
+            break
+        except:
+            pass
+
     game_board.border()
     game_board.refresh()
-
-    hold_win = curses.newwin(
-        4 + 2,
-        (4 * 2) + 4,
-        (height - y_size - 2) // 2,
-        (width - (x_size * 2) - 2) // 2 - 12,
-    )
     hold_win.border()
     hold_win.refresh()
-
-    next_win = curses.newwin(
-        16 + 2,
-        (4 * 2) + 4,
-        (height - y_size - 2) // 2,
-        (width - (x_size * 2) - 2) // 2 + (x_size * 2 + 2),
-    )
     next_win.border()
     next_win.refresh()
 
+    points_win.refresh()
+
     piece = Piece()
+    render_board()
     render_hold()
     render_next()
-    render_board()
+
+    render_points()
     piece.new_piece()
 
     term = Terminal()
@@ -837,6 +843,7 @@ def main(stdscr):
                         while piece.move(0, 1):
                             piece.score += 2
                         piece.lock()
+                        render_points()
 
                 # SOFT DROP PRESSED
                 if "soft_drop" in pressed:
@@ -916,8 +923,15 @@ def main(stdscr):
                                 (height - y_size - 2) // 2,
                                 (width - (x_size * 2) - 2) // 2 - 12,
                             )
+
+                            points_win.resize(2, 12)
+                            points_win.mvwin(
+                                (height - y_size - 2) // 2 + 16 + 2,
+                                (width - (x_size * 2) - 2) // 2 + (x_size * 2 + 2),
+                            )
+
+                            hold_win.clear()
                             hold_win.border()
-                            hold_win.refresh()
 
                             game_board.clear()
                             game_board.border()
@@ -928,6 +942,9 @@ def main(stdscr):
                             render_board()
                             render_hold()
                             render_next()
+
+                            render_points()
+
                             piece.render()
                             break
                         except:
