@@ -7,6 +7,7 @@ import time
 import json
 import curses
 import random
+import datetime
 from blessed import Terminal
 from curses import wrapper
 
@@ -255,6 +256,8 @@ for p in kick_table:
 
 
 def render_board():
+    game_board.erase()
+    game_board.border()
     for y in range(y_size):
         for x in range(x_size):
             game_board.addstr(
@@ -327,11 +330,46 @@ def render_next():
     next_win.refresh()
 
 
-def render_points():
-    points_win.erase()
-    points_win.addstr(0, 0, "SCORE")
-    points_win.addstr(1, 0, str(piece.score))
-    points_win.refresh()
+def render_score():
+    score_win.erase()
+    score_win.addstr(0, 0, "SCORE")
+    score_win.addstr(1, 0, f"{piece.score:,}")
+    score_win.refresh()
+
+
+def render_stats():
+    stats_win.erase()
+    stats_win.addstr(0, 13 - len("LEVEL"), "LEVEL")
+    stats_win.addstr(1, 13 - len(str(piece.level)), str(piece.level))
+    stats_win.addstr(3, 13 - len("LINES"), "LINES")
+    stats_win.addstr(4, 13 - len(str(piece.lines)), str(piece.lines))
+
+    elapsed = time.time() - piece.time_start
+    td = datetime.timedelta(seconds=elapsed)
+
+    total_seconds = td.total_seconds()
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, remainder = divmod(remainder, 60)
+    seconds = int(remainder)
+    ms = int((remainder - seconds) * 1000) // 10
+
+    hours = int(hours)
+    minutes = int(minutes)
+
+    if hours > 0:
+        piece.time = f"{hours}:{minutes:02}:{seconds:02}.{ms:02}"
+    elif minutes > 0:
+        piece.time = f"{minutes}:{seconds:02}.{ms:02}"
+    else:
+        piece.time = f"{seconds}.{ms:02}"
+
+    stats_win.addstr(6, 13 - len("TIME"), "TIME")
+    try:
+        stats_win.addstr(7, 13 - len(str(piece.time)), str(piece.time))
+    except:
+        pass
+
+    stats_win.refresh()
 
 
 def key_priority(dict, a, b):
@@ -346,6 +384,8 @@ def key_priority(dict, a, b):
 
 class Piece:
     def __init__(self):
+        self.time_start = time.time()
+        self.time = 0
         self.lines = 0
         self.level = min(
             config["starting_level"] + int(self.lines / 10), len(levelspeed) - 1
@@ -589,7 +629,7 @@ class Piece:
         if sdf <= 0:
             while self.move(0, 1):
                 self.score += 1
-            render_points()
+            render_score()
             return
         if sdf < 5:
             sdf = 1
@@ -597,7 +637,7 @@ class Piece:
             if not self.on_ground():
                 if sdf > 1:
                     self.score += 1
-                    render_points()
+                    render_score()
                 self.move(0, 1)
             self.last_grav_time = time.time() * 1000
 
@@ -632,7 +672,7 @@ class Piece:
 
         if rows_cleared > 0:
             render_board()
-            render_points()
+            render_score()
         self.new_piece()
 
 
@@ -641,7 +681,8 @@ def main(stdscr):
     global game_board
     global hold_win
     global next_win
-    global points_win
+    global score_win
+    global stats_win
     global board
     curses.curs_set(0)
     curses.start_color()
@@ -722,31 +763,45 @@ def main(stdscr):
                 (width - (x_size * 2) - 2) // 2 + (x_size * 2 + 2),
             )
 
-            points_win = curses.newwin(
+            score_win = curses.newwin(
                 2,
-                12,
+                13,
                 (height - y_size - 2) // 2 + 16 + 2,
                 (width - (x_size * 2) - 2) // 2 + (x_size * 2 + 2),
+            )
+
+            stats_win = curses.newwin(
+                8,
+                13,
+                max(
+                    (height - y_size - 2) // 2 + 6,
+                    (height - y_size - 2) // 2 + y_size + 2 - 8,
+                ),
+                (width - (x_size * 2) - 2) // 2 - 12 - 1,
             )
             break
         except:
             pass
 
-    game_board.border()
-    game_board.refresh()
-    hold_win.border()
-    hold_win.refresh()
-    next_win.border()
-    next_win.refresh()
+    # game_board.border()
+    # game_board.refresh()
+    # hold_win.border()
+    # hold_win.refresh()
+    # next_win.border()
+    # next_win.refresh()
 
-    points_win.refresh()
+    # score_win.refresh()
+
+    # stats_win.border()
+    # stats_win.refresh()
 
     piece = Piece()
     render_board()
     render_hold()
     render_next()
+    render_stats()
 
-    render_points()
+    render_score()
     piece.new_piece()
 
     term = Terminal()
@@ -843,7 +898,7 @@ def main(stdscr):
                         while piece.move(0, 1):
                             piece.score += 2
                         piece.lock()
-                        render_points()
+                        render_score()
 
                 # SOFT DROP PRESSED
                 if "soft_drop" in pressed:
@@ -898,6 +953,8 @@ def main(stdscr):
                         if kb:
                             pressed[kb][1] = False
 
+                render_stats()
+
                 new_height, new_width = stdscr.getmaxyx()
                 if height != new_height or width != new_width:
                     while True:
@@ -924,26 +981,35 @@ def main(stdscr):
                                 (width - (x_size * 2) - 2) // 2 - 12,
                             )
 
-                            points_win.resize(2, 12)
-                            points_win.mvwin(
+                            score_win.resize(2, 13)
+                            score_win.mvwin(
                                 (height - y_size - 2) // 2 + 16 + 2,
                                 (width - (x_size * 2) - 2) // 2 + (x_size * 2 + 2),
                             )
 
-                            hold_win.clear()
-                            hold_win.border()
+                            stats_win.resize(8, 13)
+                            stats_win.mvwin(
+                                max(
+                                    (height - y_size - 2) // 2 + 6,
+                                    (height - y_size - 2) // 2 + y_size + 2 - 8,
+                                ),
+                                (width - (x_size * 2) - 2) // 2 - 12 - 1,
+                            )
 
-                            game_board.clear()
-                            game_board.border()
+                            # hold_win.clear()
+                            # hold_win.border()
 
-                            next_win.clear()
-                            next_win.border()
+                            # game_board.clear()
+                            # game_board.border()
+
+                            # next_win.clear()
+                            # next_win.border()
 
                             render_board()
                             render_hold()
                             render_next()
 
-                            render_points()
+                            render_score()
 
                             piece.render()
                             break
