@@ -337,6 +337,23 @@ def render_score():
     score_win.refresh()
 
 
+def format_time(seconds):
+    td = datetime.timedelta(seconds=seconds)
+
+    total_seconds = int(td.total_seconds())
+    ms = int((seconds - total_seconds) * 1000) // 10
+
+    h, rem = divmod(total_seconds, 3600)
+    m, s = divmod(rem, 60)
+
+    if h > 0:
+        return f"{h}:{m:02}:{s:02}.{ms:02}"
+    elif m > 0:
+        return f"{m}:{s:02}.{ms:02}"
+    else:
+        return f"{s}.{ms:02}"
+
+
 def render_stats():
     stats_win.erase()
     stats_win.addstr(0, 13 - len("LEVEL"), "LEVEL")
@@ -344,24 +361,7 @@ def render_stats():
     stats_win.addstr(3, 13 - len("LINES"), "LINES")
     stats_win.addstr(4, 13 - len(str(piece.lines)), str(piece.lines))
 
-    elapsed = time.time() - piece.time_start
-    td = datetime.timedelta(seconds=elapsed)
-
-    total_seconds = td.total_seconds()
-    hours, remainder = divmod(total_seconds, 3600)
-    minutes, remainder = divmod(remainder, 60)
-    seconds = int(remainder)
-    ms = int((remainder - seconds) * 1000) // 10
-
-    hours = int(hours)
-    minutes = int(minutes)
-
-    if hours > 0:
-        piece.time = f"{hours}:{minutes:02}:{seconds:02}.{ms:02}"
-    elif minutes > 0:
-        piece.time = f"{minutes}:{seconds:02}.{ms:02}"
-    else:
-        piece.time = f"{seconds}.{ms:02}"
+    piece.time = format_time(time.time() - piece.time_start)
 
     stats_win.addstr(6, 13 - len("TIME"), "TIME")
     try:
