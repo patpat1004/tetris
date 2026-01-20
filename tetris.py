@@ -12,6 +12,11 @@ from blessed import Terminal
 from curses import wrapper
 
 
+term = Terminal()
+state = term.get_kitty_keyboard_state()
+pressed = {}
+
+
 def frames_to_ms(frames):
     return (frames * 1000) / 60
 
@@ -803,10 +808,6 @@ def main(stdscr):
 
     render_score()
     piece.new_piece()
-
-    term = Terminal()
-    state = term.get_kitty_keyboard_state()
-    pressed = {}
 
     game_board.refresh()
 
