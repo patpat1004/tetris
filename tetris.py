@@ -263,6 +263,25 @@ for p in kick_table:
 def render_board():
     game_board.erase()
     game_board.border()
+
+    """
+    game_board.addstr(0, 0, f" {'▁' * (x_size * 2)} ")
+    for i in range(y_size):
+        game_board.addstr(i + 1, 0, f"▕{' ' * (x_size * 2)}▏")
+    try:
+        game_board.addstr(y_size + 1, 0, f" {'▔' * (x_size * 2)} ")
+    except:
+        pass
+    """
+    """
+    game_board.addstr(0, 0, f"▄{'▄' * (x_size * 2)}▄")
+    for i in range(y_size):
+        game_board.addstr(i + 1, 0, f"█{' ' * (x_size * 2)}█")
+    try:
+        game_board.addstr(y_size + 1, 0, f"▀{'▀' * (x_size * 2)}▀")
+    except:
+        pass
+    """
     for y in range(y_size):
         for x in range(x_size):
             game_board.addstr(
@@ -677,7 +696,7 @@ class Piece:
 
         if rows_cleared > 0:
             render_board()
-            render_score()
+        render_score()
         self.new_piece()
 
 
@@ -870,10 +889,7 @@ def main(stdscr):
                     if key_priority(pressed, k, "right"):
                         if pressed[k][1]:
                             piece.move(-1, 0)
-                        if (
-                            not pressed[k][1]
-                            and current_time - pressed[k][0] > config["das"]
-                        ):
+                        elif current_time - pressed[k][0] > config["das"]:
                             if current_time - pressed[k][2] > config["arr"]:
                                 piece.move(-1, 0)
                                 pressed[k][2] = time.time() * 1000
@@ -884,10 +900,7 @@ def main(stdscr):
                     if key_priority(pressed, k, "left"):
                         if pressed[k][1]:
                             piece.move(1, 0)
-                        if (
-                            not pressed[k][1]
-                            and current_time - pressed[k][0] > config["das"]
-                        ):
+                        elif current_time - pressed[k][0] > config["das"]:
                             if current_time - pressed[k][2] > config["arr"]:
                                 piece.move(1, 0)
                                 pressed[k][2] = time.time() * 1000
@@ -899,7 +912,6 @@ def main(stdscr):
                         while piece.move(0, 1):
                             piece.score += 2
                         piece.lock()
-                        render_score()
 
                 # SOFT DROP PRESSED
                 if "soft_drop" in pressed:
@@ -944,6 +956,8 @@ def main(stdscr):
 
                 game_board.refresh()
 
+                render_stats()
+
                 if state is None:
                     try:
                         del pressed[kb]
@@ -953,8 +967,6 @@ def main(stdscr):
                     if key.pressed:
                         if kb:
                             pressed[kb][1] = False
-
-                render_stats()
 
                 new_height, new_width = stdscr.getmaxyx()
                 if height != new_height or width != new_width:
