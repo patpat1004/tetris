@@ -89,38 +89,25 @@ config["arr"] = frames_to_ms(config["arr"])
 x_size, y_size = config["width"], config["height"]
 
 
+# levelspeed = [ 48, 43, 38, 33, 28, 23, 18, 13, 8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, ]
 levelspeed = [
-    48,
-    43,
-    38,
-    33,
-    28,
-    23,
-    18,
-    13,
-    8,
-    6,
-    5,
-    5,
-    5,
-    4,
-    4,
-    4,
+    60,
+    38.6,
+    24.2,
+    14.9,
+    9,
+    5.3,
     3,
-    3,
-    3,
-    2,
-    2,
-    2,
-    2,
-    2,
-    2,
-    2,
-    2,
-    2,
-    2,
-    1,
+    1.7,
+    0.93,
+    0.5,
+    0.26,
+    0.13,
+    0.065,
+    0,
+    0,
 ]
+
 for i in range(len(levelspeed)):
     levelspeed[i] = frames_to_ms(levelspeed[i])
 
