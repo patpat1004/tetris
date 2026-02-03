@@ -9,7 +9,7 @@ import curses
 import random
 import datetime
 from blessed import Terminal
-from curses import wrapper
+from curses import color_pair, wrapper
 
 
 term = Terminal()
@@ -252,23 +252,29 @@ def render_board():
     game_board.border()
 
     """
-    game_board.addstr(0, 0, f" {'▁' * (x_size * 2)} ")
+    game_board.addstr(0, 0, f" {'▁' * (x_size * 2)} ", curses.color_pair(1))
     for i in range(y_size):
-        game_board.addstr(i + 1, 0, f"▕{' ' * (x_size * 2)}▏")
+        game_board.addstr(i + 1, 0, f"▕{' ' * (x_size * 2)}▏", curses.color_pair(1))
     try:
-        game_board.addstr(y_size + 1, 0, f" {'▔' * (x_size * 2)} ")
+        game_board.addstr(
+            y_size + 1, 0, f" {'▔' * (x_size * 2)} ", curses.color_pair(1)
+        )
     except:
         pass
     """
-    """
-    game_board.addstr(0, 0, f"▄{'▄' * (x_size * 2)}▄")
+
+    game_board.addstr(0, 0, f"▄{'▄' * (x_size * 2)}▄", curses.color_pair(1))
     for i in range(y_size):
-        game_board.addstr(i + 1, 0, f"█{' ' * (x_size * 2)}█")
+        game_board.addstr(
+            i + 1, 0, f" {' ' * (x_size * 2)} ", curses.color_pair(1) | curses.A_REVERSE
+        )
     try:
-        game_board.addstr(y_size + 1, 0, f"▀{'▀' * (x_size * 2)}▀")
+        game_board.addstr(
+            y_size + 1, 0, f"▀{'▀' * (x_size * 2)}▀", curses.color_pair(1)
+        )
     except:
         pass
-    """
+
     for y in range(y_size):
         for x in range(x_size):
             game_board.addstr(
@@ -281,7 +287,9 @@ def render_board():
 
 def render_hold():
     hold_win.erase()
+    hold_win.attrset(color_pair(1))
     hold_win.border()
+    hold_win.attrset(color_pair(0))
     hold_win.addstr(0, 0, "    HOLD    ", curses.A_REVERSE)
     if piece.held:
         render_piece = piece.held
@@ -316,7 +324,9 @@ def render_hold():
 
 def render_next():
     next_win.erase()
+    next_win.attrset(curses.color_pair(1))
     next_win.border()
+    next_win.attrset(curses.color_pair(0))
     next_win.addstr(0, 0, "    NEXT    ", curses.A_REVERSE)
     for next_piece in range(5):
         render_piece = piece.bag[next_piece]
@@ -687,13 +697,91 @@ class Piece:
         self.new_piece()
 
 
-def main(stdscr):
-    global piece
+def create_wins(height, width):
     global game_board
     global hold_win
     global next_win
     global score_win
     global stats_win
+
+    game_board = curses.newwin(
+        y_size + 2,
+        (x_size * 2) + 2,
+        (height - y_size - 2) // 2,
+        (width - (x_size * 2) - 2) // 2,
+    )
+
+    hold_win = curses.newwin(
+        6,
+        12,
+        (height - y_size - 2) // 2,
+        (width - (x_size * 2) - 2) // 2 - 13,
+    )
+
+    next_win = curses.newwin(
+        18,
+        (4 * 2) + 4,
+        (height - y_size - 2) // 2,
+        (width - (x_size * 2) - 2) // 2 + (x_size * 2 + 3),
+    )
+
+    score_win = curses.newwin(
+        2,
+        13,
+        (height - y_size - 2) // 2 + 16 + 2,
+        (width - (x_size * 2) - 2) // 2 + (x_size * 2 + 3),
+    )
+
+    stats_win = curses.newwin(
+        8,
+        13,
+        max(
+            (height - y_size - 2) // 2 + 6,
+            (height - y_size - 2) // 2 + y_size + 2 - 8,
+        ),
+        (width - (x_size * 2) - 2) // 2 - 12 - 2,
+    )
+
+
+def mv_wins(height, width):
+    game_board.resize(y_size + 2, (x_size * 2) + 2)
+    game_board.mvwin(
+        (height - y_size - 2) // 2,
+        (width - (x_size * 2) - 2) // 2,
+    )
+
+    next_win.resize(18, 12)
+    next_win.mvwin(
+        (height - y_size - 2) // 2,
+        (width - (x_size * 2) - 2) // 2 + (x_size * 2 + 3),
+    )
+
+    hold_win.resize(6, 12)
+    hold_win.mvwin(
+        (height - y_size - 2) // 2,
+        (width - (x_size * 2) - 2) // 2 - 13,
+    )
+
+    score_win.resize(2, 13)
+    score_win.mvwin(
+        (height - y_size - 2) // 2 + 16 + 2,
+        (width - (x_size * 2) - 2) // 2 + (x_size * 2 + 3),
+    )
+
+    stats_win.resize(8, 13)
+    stats_win.mvwin(
+        max(
+            (height - y_size - 2) // 2 + 6,
+            (height - y_size - 2) // 2 + y_size + 2 - 8,
+        ),
+        (width - (x_size * 2) - 2) // 2 - 12 - 2,
+    )
+
+    pass
+
+
+def main(stdscr):
+    global piece
     global board
     curses.curs_set(0)
     curses.start_color()
@@ -753,43 +841,7 @@ def main(stdscr):
             stdscr.clear()
             stdscr.refresh()
             height, width = stdscr.getmaxyx()
-            game_board = curses.newwin(
-                y_size + 2,
-                (x_size * 2) + 2,
-                (height - y_size - 2) // 2,
-                (width - (x_size * 2) - 2) // 2,
-            )
-
-            hold_win = curses.newwin(
-                6,
-                12,
-                (height - y_size - 2) // 2,
-                (width - (x_size * 2) - 2) // 2 - 12,
-            )
-
-            next_win = curses.newwin(
-                18,
-                (4 * 2) + 4,
-                (height - y_size - 2) // 2,
-                (width - (x_size * 2) - 2) // 2 + (x_size * 2 + 2),
-            )
-
-            score_win = curses.newwin(
-                2,
-                13,
-                (height - y_size - 2) // 2 + 16 + 2,
-                (width - (x_size * 2) - 2) // 2 + (x_size * 2 + 2),
-            )
-
-            stats_win = curses.newwin(
-                8,
-                13,
-                max(
-                    (height - y_size - 2) // 2 + 6,
-                    (height - y_size - 2) // 2 + y_size + 2 - 8,
-                ),
-                (width - (x_size * 2) - 2) // 2 - 12 - 1,
-            )
+            create_wins(height, width)
             break
         except:
             pass
@@ -963,38 +1015,7 @@ def main(stdscr):
                             stdscr.clear()
                             stdscr.refresh()
 
-                            game_board.resize(y_size + 2, (x_size * 2) + 2)
-                            game_board.mvwin(
-                                (height - y_size - 2) // 2,
-                                (width - (x_size * 2) - 2) // 2,
-                            )
-
-                            next_win.resize(18, 12)  # Adjust as needed
-                            next_win.mvwin(
-                                (height - y_size - 2) // 2,
-                                (width - (x_size * 2) - 2) // 2 + (x_size * 2 + 2),
-                            )
-
-                            hold_win.resize(6, 12)  # 4+2=6 height, (4*2)+4=12 width
-                            hold_win.mvwin(
-                                (height - y_size - 2) // 2,
-                                (width - (x_size * 2) - 2) // 2 - 12,
-                            )
-
-                            score_win.resize(2, 13)
-                            score_win.mvwin(
-                                (height - y_size - 2) // 2 + 16 + 2,
-                                (width - (x_size * 2) - 2) // 2 + (x_size * 2 + 2),
-                            )
-
-                            stats_win.resize(8, 13)
-                            stats_win.mvwin(
-                                max(
-                                    (height - y_size - 2) // 2 + 6,
-                                    (height - y_size - 2) // 2 + y_size + 2 - 8,
-                                ),
-                                (width - (x_size * 2) - 2) // 2 - 12 - 1,
-                            )
+                            mv_wins(height, width)
 
                             # hold_win.clear()
                             # hold_win.border()
