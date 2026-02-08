@@ -9,7 +9,7 @@ import curses
 import random
 import datetime
 from blessed import Terminal
-from curses import color_pair, wrapper
+from curses import wrapper
 
 
 term = Terminal()
@@ -287,9 +287,9 @@ def render_board():
 
 def render_hold():
     hold_win.erase()
-    hold_win.attrset(color_pair(1))
+    hold_win.attrset(curses.color_pair(1))
     hold_win.border()
-    hold_win.attrset(color_pair(0))
+    hold_win.attrset(curses.color_pair(0))
     hold_win.addstr(0, 0, "    HOLD    ", curses.A_REVERSE)
     if piece.held:
         render_piece = piece.held
@@ -417,6 +417,8 @@ class Piece:
         self.bag = bag
         self.held = None
         self.score = 0
+        self.combo = 0
+        self.last_rows_clear = 0
         self.can_hold = True
         self.dead = False
 
@@ -504,7 +506,7 @@ class Piece:
                 )
 
     def unrender(self):
-        # render ghost piece
+        # unrender ghost piece
         is_valid = True
         indicator_y = self.position[1]
         for i in range(y_size):
@@ -540,7 +542,7 @@ class Piece:
                     curses.color_pair(mino_color["0"]),
                 )
 
-        # render actual piece
+        # unrender actual piece
         for i in range(len(pieces[self.current][self.rotation])):
             x_offset = pieces[self.current][self.rotation][i][0]
             y_offset = pieces[self.current][self.rotation][i][1]
@@ -692,7 +694,21 @@ class Piece:
         )
 
         if rows_cleared > 0:
+            self.combo += 1
+
+            # combo
+            self.score += (self.combo - 1) * 50
+
+            # back 2 back
+            if self.last_rows_clear == 4 and rows_cleared == 4:
+                self.score += 400
+
+            self.last_rows_clear = rows_cleared
+
             render_board()
+        else:
+            self.combo = 0
+
         render_score()
         self.new_piece()
 
