@@ -377,16 +377,19 @@ def format_time(seconds):
 
 def render_stats():
     stats_win.erase()
-    stats_win.addstr(0, 13 - len("LEVEL"), "LEVEL")
-    stats_win.addstr(1, 13 - len(str(piece.level)), str(piece.level))
-    stats_win.addstr(3, 13 - len("LINES"), "LINES")
-    stats_win.addstr(4, 13 - len(str(piece.lines)), str(piece.lines))
+    if piece.combo:
+        stats_win.addstr(3, 13 - len("COMBO"), "COMBO")
+        stats_win.addstr(4, 13 - len(str(piece.combo)), str(piece.combo))
+    stats_win.addstr(5, 13 - len("LEVEL"), "LEVEL")
+    stats_win.addstr(6, 13 - len(str(piece.level)), str(piece.level))
+    stats_win.addstr(7, 13 - len("LINES"), "LINES")
+    stats_win.addstr(8, 13 - len(str(piece.lines)), str(piece.lines))
 
     piece.time = format_time(time.time() - piece.time_start)
 
-    stats_win.addstr(6, 13 - len("TIME"), "TIME")
+    stats_win.addstr(9, 13 - len("TIME"), "TIME")
     try:
-        stats_win.addstr(7, 13 - len(str(piece.time)), str(piece.time))
+        stats_win.addstr(10, 13 - len(str(piece.time)), str(piece.time))
     except:
         pass
 
@@ -680,14 +683,9 @@ class Piece:
                 rows_cleared += 1
                 self.lines += 1
 
-        if rows_cleared == 1:
-            self.score += 100 * (self.level + 1)
-        elif rows_cleared == 2:
-            self.score += 300 * (self.level + 1)
-        elif rows_cleared == 3:
-            self.score += 500 * (self.level + 1)
-        elif rows_cleared == 4:
-            self.score += 800 * (self.level + 1)
+        scores = [0, 100, 300, 500, 800]
+
+        base_score = scores[rows_cleared] * (self.level + 1)
 
         self.level = min(
             config["starting_level"] + int(self.lines / 10), len(levelspeed) - 1
@@ -697,15 +695,22 @@ class Piece:
             self.combo += 1
 
             # combo
-            self.score += (self.combo - 1) * 50
+            combo_score = (self.combo - 1) * 50
 
             # back 2 back
             if self.last_rows_clear == 4 and rows_cleared == 4:
-                self.score += 400
+                b2b_score = 400
+            else:
+                b2b_score = 0
 
             self.last_rows_clear = rows_cleared
 
             render_board()
+
+            final_score = base_score + combo_score + b2b_score
+
+            self.score += final_score
+
         else:
             self.combo = 0
 
@@ -749,11 +754,11 @@ def create_wins(height, width):
     )
 
     stats_win = curses.newwin(
-        8,
+        11,
         13,
         max(
             (height - y_size - 2) // 2 + 6,
-            (height - y_size - 2) // 2 + y_size + 2 - 8,
+            (height - y_size - 2) // 2 + y_size + 2 - 11,
         ),
         (width - (x_size * 2) - 2) // 2 - 12 - 2,
     )
@@ -784,11 +789,11 @@ def mv_wins(height, width):
         (width - (x_size * 2) - 2) // 2 + (x_size * 2 + 3),
     )
 
-    stats_win.resize(8, 13)
+    stats_win.resize(11, 13)
     stats_win.mvwin(
         max(
             (height - y_size - 2) // 2 + 6,
-            (height - y_size - 2) // 2 + y_size + 2 - 8,
+            (height - y_size - 2) // 2 + y_size + 2 - 11,
         ),
         (width - (x_size * 2) - 2) // 2 - 12 - 2,
     )
